@@ -1,0 +1,812 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Splitter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #8e2de2;
+            --primary-dark: #4a00e0;
+            --primary-light: rgba(142, 45, 226, 0.12);
+            --gradient: linear-gradient(135deg, #ff007f 0%, #7928ca 50%, #4a00e0 100%);
+            --bg-gradient: linear-gradient(125deg, #ff9a9e 0%, #fecfef 30%, #a1c4fd 70%, #c2e9fb 100%);
+            --card-bg: rgba(255, 255, 255, 0.82);
+            --card-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --input-border: #e2e8f0;
+            --input-bg: #ffffff;
+            --shadow: 0 20px 40px rgba(74, 0, 224, 0.12), 0 1px 3px rgba(0,0,0,0.05);
+            --chip-bg: rgba(142, 45, 226, 0.08);
+            --history-card: rgba(255, 255, 255, 0.6);
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
+            --card-bg: rgba(15, 23, 42, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-border: #334155;
+            --input-bg: #1e293b;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            --chip-bg: rgba(142, 45, 226, 0.22);
+            --history-card: rgba(30, 41, 59, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.3s, border-color 0.3s, color 0.3s, transform 0.2s;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 300% 300%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-main);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card-border);
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--chip-bg);
+            transform: scale(1.1) rotate(15deg);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 35px;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--input-border);
+            z-index: 1;
+        }
+
+        .step {
+            position: relative;
+            z-index: 2;
+            background: var(--input-bg);
+            border: 2px solid var(--input-border);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .step.active {
+            border-color: #7928ca;
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 0 15px rgba(121, 40, 202, 0.4);
+        }
+
+        .section {
+            margin-bottom: 28px;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        label i {
+            color: #7928ca;
+            width: 18px;
+            height: 18px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            gap: 12px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid var(--input-border);
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 500;
+            background: var(--input-bg);
+            color: var(--text-main);
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #8e2de2;
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+
+        .flex-group {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .flex-group > div {
+            flex: 1;
+        }
+
+        button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 14px 26px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(142, 45, 226, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(142, 45, 226, 0.45);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 2px solid var(--input-border);
+            color: var(--text-main);
+            box-shadow: none;
+        }
+
+        button.secondary:hover {
+            background: var(--chip-bg);
+            border-color: #8e2de2;
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .participant-count {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-left: auto;
+            background: var(--chip-bg);
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .chip {
+            background: var(--chip-bg);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(142, 45, 226, 0.2);
+            animation: scaleUp 0.2s ease;
+        }
+
+        @keyframes scaleUp {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .chip button {
+            background: transparent;
+            border: none;
+            padding: 0;
+            box-shadow: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .chip button:hover {
+            color: #ff4757;
+        }
+
+        /* Results Display Grid with Enhanced Color Gradients */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            padding: 20px;
+            border-radius: 18px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .result-card.full-width {
+            grid-column: span 2;
+            background: linear-gradient(135deg, rgba(142, 45, 226, 0.15) 0%, rgba(74, 0, 224, 0.15) 100%);
+            border: 1px solid rgba(142, 45, 226, 0.3);
+        }
+
+        .result-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .result-card.full-width .result-value {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+        }
+
+        .breakdown-list {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 180px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.02);
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        [data-theme="dark"] .breakdown-list {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 6px;
+            border-bottom: 1px dashed var(--input-border);
+            font-size: 0.95rem;
+        }
+
+        /* History Module Dashboard View */
+        .history-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+            border-radius: 24px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow);
+            margin-top: 10px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--input-border);
+            padding-bottom: 10px;
+        }
+
+        .history-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .clear-history-btn {
+            background: transparent;
+            color: #ff4757;
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            box-shadow: none;
+        }
+
+        .clear-history-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+            box-shadow: none;
+            border-color: #ff4757;
+        }
+
+        .history-container {
+            max-height: 250px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .history-item {
+            background: var(--history-card);
+            border: 1px solid var(--input-border);
+            padding: 14px 18px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .history-meta h4 {
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .history-meta span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .history-amount {
+            text-align: right;
+            font-weight: 700;
+            color: #7928ca;
+        }
+
+        .empty-history {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 30px 0;
+            font-size: 0.95rem;
+        }
+
+        /* Toast UI Notify Bubble */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background: #1e293b;
+            color: white;
+            padding: 14px 22px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-weight: 500;
+            animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        [data-theme="dark"] .toast {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); }
+            to { transform: translateX(0); }
+        }
+
+        footer {
+            margin-top: 30px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+            <i data-lucide="moon"></i>
+        </button>
+
+        <header>
+            <h1>💸 Smart Expense Splitter</h1>
+            <div class="subtitle">Split bills easily with modern elegance.</div>
+        </header>
+
+        <div class="steps">
+            <div class="step active" id="step1">1</div>
+            <div class="step" id="step2">2</div>
+            <div class="step" id="step3">3</div>
+        </div>
+
+        <div class="section">
+            <label>
+                <i data-lucide="users"></i> 1. Add Participants
+                <span class="participant-count" id="participantCount">0 added</span>
+            </label>
+            <div class="input-wrapper">
+                <input type="text" id="participantInput" placeholder="Enter name (e.g., Alex)">
+                <button id="addBtn"><i data-lucide="plus"></i> Add</button>
+            </div>
+            <div class="chips-container" id="chipsContainer"></div>
+        </div>
+
+        <div class="section">
+            <div class="flex-group">
+                <div>
+                    <label><i data-lucide="indian-rupee"></i> Total Bill (₹)</label>
+                    <input type="number" id="billAmount" placeholder="0.00" min="0">
+                </div>
+                <div>
+                    <label><i data-lucide="percent"></i> Tip (%)</label>
+                    <input type="number" id="tipPercentage" value="0" min="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <label><i data-lucide="credit-card"></i> Who Paid?</label>
+            <select id="payerSelect">
+                <option value="">Select payer...</option>
+            </select>
+        </div>
+
+        <div class="flex-group" style="margin-top: 30px;">
+            <button class="secondary" id="resetBtn" style="flex: 0.4;"><i data-lucide="rotate-ccw"></i> Reset</button>
+            <button class="btn-block" id="calcBtn" style="flex: 0.6;"><i data-lucide="calculator"></i> Calculate Split</button>
+        </div>
+
+        <div class="section" id="resultsSection" style="display: none; margin-top: 30px; border-top: 2px dashed var(--input-border); padding-top: 20px;">
+            <label><i data-lucide="receipt"></i> Split Results</label>
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-label">Total Bill + Tip</div>
+                    <div class="result-value" id="resTotal">₹0.00</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Tip Value</div>
+                    <div class="result-value" id="resTip">₹0.00</div>
+                </div>
+                <div class="result-card full-width">
+                    <div class="result-label">Per Person Share</div>
+                    <div class="result-value" id="resShare">₹0.00</div>
+                </div>
+            </div>
+            <div class="breakdown-list" id="breakdownList"></div>
+        </div>
+    </div>
+
+    <div class="history-section">
+        <div class="history-header">
+            <div class="history-title"><i data-lucide="history" style="color:#7928ca;"></i> Expense History</div>
+            <button class="clear-history-btn" id="clearHistoryBtn">Clear All</button>
+        </div>
+        <div class="history-container" id="historyContainer">
+            </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- <footer>Made with ❤️ using HTML, CSS & JavaScript.</footer> -->
+
+    <script>
+        // Internal Global State Pipeline
+        let participants = [];
+        let expenseHistory = JSON.parse(localStorage.getItem('expenseHistory')) || [];
+
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const participantInput = document.getElementById('participantInput');
+        const addBtn = document.getElementById('addBtn');
+        const chipsContainer = document.getElementById('chipsContainer');
+        const participantCount = document.getElementById('participantCount');
+        const billAmountInput = document.getElementById('billAmount');
+        const tipPercentageInput = document.getElementById('tipPercentage');
+        const payerSelect = document.getElementById('payerSelect');
+        const calcBtn = document.getElementById('calcBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const historyContainer = document.getElementById('historyContainer');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+        // Dark Mode Controller Core logic Engine Routine
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', newTheme);
+            themeToggleBtn.innerHTML = newTheme === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+            lucide.createIcons();
+        });
+
+        // Toast Notification System Engine
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<i data-lucide="info" style="width:18px;height:18px;"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(120%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Handle Active Pipeline Switch Step States Indicating
+        function updateSteps() {
+            document.getElementById('step1').classList.toggle('active', participants.length === 0);
+            document.getElementById('step2').classList.toggle('active', participants.length > 0 && (!billAmountInput.value || payerSelect.value === ''));
+            document.getElementById('step3').classList.toggle('active', resultsSection.style.display === 'block');
+        }
+
+        // Render Active Participants Array Elements to Chip Tags
+        function renderChips() {
+            chipsContainer.innerHTML = '';
+            payerSelect.innerHTML = '<option value="">Select payer...</option>';
+
+            participants.forEach((name, index) => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerHTML = `
+                    <span>${name}</span>
+                    <button onclick="removeParticipant(${index})"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                `;
+                chipsContainer.appendChild(chip);
+
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                payerSelect.appendChild(option);
+            });
+
+            participantCount.textContent = `${participants.length} added`;
+            lucide.createIcons();
+            updateSteps();
+        }
+
+        // Mutation Handlers Hook Arrays Pipeline Actions
+        function addParticipant() {
+            const name = participantInput.value.trim();
+            if (!name) {
+                showToast('Please enter a valid participant name.');
+                return;
+            }
+            if (participants.includes(name)) {
+                showToast('This person has already been added!');
+                return;
+            }
+            participants.push(name);
+            participantInput.value = '';
+            renderChips();
+            showToast(`${name} added.`);
+        }
+
+        window.removeParticipant = function(index) {
+            const removedName = participants[index];
+            participants.splice(index, 1);
+            renderChips();
+            showToast(`${removedName} removed.`);
+        };
+
+        addBtn.addEventListener('click', addParticipant);
+        participantInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addParticipant(); });
+
+        // Storage Module Management Engine
+        function displayHistory() {
+            historyContainer.innerHTML = '';
+            if (expenseHistory.length === 0) {
+                historyContainer.innerHTML = '<div class="empty-history">No past expense calculations saved yet.</div>';
+                return;
+            }
+
+            expenseHistory.forEach(item => {
+                const historyCard = document.createElement('div');
+                historyCard.className = 'history-item';
+                historyCard.innerHTML = `
+                    <div class="history-meta">
+                        <h4>₹${item.amount} Split</h4>
+                        <span>Paid by ${item.payer} among ${item.count} people • ${item.date}</span>
+                    </div>
+                    <div class="history-amount">₹${item.share}/pp</div>
+                `;
+                historyContainer.appendChild(historyCard);
+            });
+        }
+
+        // Calculation Split Algorithm Pipeline
+        calcBtn.addEventListener('click', () => {
+            const totalBill = parseFloat(billAmountInput.value);
+            const tipPercent = parseFloat(tipPercentageInput.value) || 0;
+            const payer = payerSelect.value;
+
+            if (participants.length < 2) {
+                showToast('Add at least 2 participants to split a bill.');
+                return;
+            }
+            if (isNaN(totalBill) || totalBill <= 0) {
+                showToast('Please enter a valid bill amount.');
+                return;
+            }
+            if (!payer) {
+                showToast('Please specify who paid the bill.');
+                return;
+            }
+
+            const tipValue = totalBill * (tipPercent / 100);
+            const finalBillTotal = totalBill + tipValue;
+            const perPersonShare = finalBillTotal / participants.length;
+
+            document.getElementById('resTotal').textContent = `₹${finalBillTotal.toFixed(2)}`;
+            document.getElementById('resTip').textContent = `₹${tipValue.toFixed(2)}`;
+            document.getElementById('resShare').textContent = `₹${perPersonShare.toFixed(2)}`;
+
+            const breakdownList = document.getElementById('breakdownList');
+            breakdownList.innerHTML = '';
+            
+            participants.forEach(person => {
+                if (person !== payer) {
+                    const item = document.createElement('div');
+                    item.className = 'breakdown-item';
+                    item.innerHTML = `<span><strong>${person}</strong> owes ${payer}</span> <span>₹${perPersonShare.toFixed(2)}</span>`;
+                    breakdownList.appendChild(item);
+                }
+            });
+
+            resultsSection.style.display = 'block';
+            updateSteps();
+
+            // Push object record matrix sequence entry item into localStorage array stack
+            const newHistoryRecord = {
+                amount: finalBillTotal.toFixed(2),
+                payer: payer,
+                count: participants.length,
+                share: perPersonShare.toFixed(2),
+                date: new Date().toLocaleDateString('en-IN', { hour: '2-digit', minute: '2-digit' })
+            };
+
+            expenseHistory.unshift(newHistoryRecord);
+            localStorage.setItem('expenseHistory', JSON.stringify(expenseHistory));
+            displayHistory();
+
+            showToast('Calculated and logged to history successfully!');
+        });
+
+        // App State Erasure Execution Routine Method Trigger Hooks
+        resetBtn.addEventListener('click', () => {
+            participants = [];
+            billAmountInput.value = '';
+            tipPercentageInput.value = '0';
+            resultsSection.style.display = 'none';
+            renderChips();
+            showToast('Reset system variables.');
+        });
+
+        clearHistoryBtn.addEventListener('click', () => {
+            expenseHistory = [];
+            localStorage.removeItem('expenseHistory');
+            displayHistory();
+            showToast('Cleared all archived local logs history.');
+        });
+
+        // On-mount Initialization Routines Loops
+        displayHistory();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
